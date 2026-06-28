@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>免费在线文件处理工具 - PDF合并、图片压缩、格式转换</title>
+    <meta name="description" content="免费在线文件处理工具，支持PDF合并拆分、图片压缩、文本格式转换等实用功能，无需下载安装，浏览器内直接使用。">
+    <meta name="keywords" content="PDF工具,在线文件处理,图片压缩,格式转换,免费工具">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://VowToMe.github.io/free-file-tools/">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: #f0f4f8; color: #1a202c; line-height: 1.6; min-height: 100vh;
+        }
+        .container { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+
+        header {
+            background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+            color: #fff; padding: 40px 0 32px; text-align: center;
+            box-shadow: 0 4px 20px rgba(15, 118, 110, 0.3);
+        }
+        header h1 { font-size: 2rem; font-weight: 700; }
+        header p { margin-top: 8px; opacity: 0.9; font-size: 1rem; }
+
+        .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; padding: 32px 0; }
+        .tool-card {
+            background: #fff; border-radius: 16px; padding: 24px 20px; cursor: pointer;
+            border: 2px solid #e2e8f0; transition: all 0.2s; text-align: center;
+        }
+        .tool-card:hover { border-color: #14b8a6; transform: translateY(-3px); box-shadow: 0 8px 20px rgba(20,184,166,0.12); }
+        .tool-card.active { border-color: #0f766e; background: #f0fdfa; }
+        .tool-card .icon { font-size: 2.2rem; margin-bottom: 8px; }
+        .tool-card .name { font-size: 1rem; font-weight: 600; color: #1e293b; }
+        .tool-card .desc { font-size: 0.82rem; color: #64748b; margin-top: 4px; }
+
+        .tool-panel {
+            background: #fff; border-radius: 16px; padding: 28px 32px; margin-bottom: 28px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06); display: none;
+        }
+        .tool-panel.show { display: block; }
+        .tool-panel h2 { font-size: 1.2rem; color: #0f766e; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; }
+        .tool-panel p.tip { font-size: 0.85rem; color: #64748b; margin-bottom: 12px; }
+        
+        .drop-zone {
+            border: 2px dashed #cbd5e1; border-radius: 12px; padding: 40px 20px;
+            text-align: center; cursor: pointer; transition: all 0.2s; background: #fafbfc;
+        }
+        .drop-zone:hover, .drop-zone.drag-over { border-color: #14b8a6; background: #f0fdfa; }
+        .drop-zone p { color: #64748b; font-size: 0.9rem; }
+        .drop-zone .big-icon { font-size: 2.5rem; margin-bottom: 8px; }
+        .drop-zone input[type="file"] { display: none; }
+
+        .file-list { margin-top: 16px; }
+        .file-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 6px; font-size: 0.88rem; }
+        .file-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .file-item .size { color: #64748b; margin: 0 12px; font-size: 0.8rem; }
+
+        .btn { padding: 10px 24px; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-primary { background: #0f766e; color: #fff; }
+        .btn-primary:hover { background: #0d5e57; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,118,110,0.35); }
+        .btn-secondary { background: #f1f5f9; color: #334155; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-success { background: #059669; color: #fff; }
+        .btn-success:hover { background: #047857; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+        .progress-bar { width: 100%; height: 6px; background: #e2e8f0; border-radius: 3px; margin: 12px 0; overflow: hidden; display: none; }
+        .progress-bar.show { display: block; }
+        .progress-bar .fill { height: 100%; background: linear-gradient(90deg, #0f766e, #14b8a6); width: 0%; border-radius: 3px; transition: width 0.3s; }
+
+        .result-box { margin-top: 16px; padding: 16px; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 10px; display: none; }
+        .result-box.show { display: block; }
+
+        .output-row { margin-top: 16px; }
+        .output-row textarea, .output-row .output-box {
+            width: 100%; min-height: 150px; padding: 14px; border: 1px solid #e2e8f0; border-radius: 10px;
+            font-size: 0.9rem; background: #fafbfc; font-family: monospace; resize: vertical;
+        }
+
+        .support {
+            background: #fff; border-radius: 16px; padding: 32px; margin-bottom: 28px;
+            text-align: center; box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+        }
+        .support h3 { font-size: 1.05rem; color: #0f766e; margin-bottom: 4px; }
+        .support p { color: #64748b; font-size: 0.85rem; margin-bottom: 14px; }
+        .support .qr-label { font-size: 0.85rem; color: #475569; }
+
+        footer { text-align: center; padding: 24px 0; font-size: 0.82rem; color: #94a3b8; border-top: 1px solid #e2e8f0; margin-top: 12px; }
+        
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(120px);
+            background: #1e293b; color: #fff; padding: 10px 24px; border-radius: 10px;
+            font-size: 0.88rem; transition: transform 0.3s; z-index: 999;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 600px) {
+            .tool-grid { grid-template-columns: 1fr 1fr; }
+            .tool-panel { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="container">
+        <h1>在线工具箱</h1>
+        <p>免费 • 浏览器内完成 • 无需上传服务器</p>
+    </div>
+</header>
+
+<main class="container">
+    <div class="tool-grid" id="toolGrid">
+        <div class="tool-card active" data-tool="imgcompress" onclick="switchTool('imgcompress')">
+            <div class="icon">🖼️</div>
+            <div class="name">图片压缩</div>
+            <div class="desc">压缩 JPG/PNG 图片大小</div>
+        </div>
+        <div class="tool-card" data-tool="texttools" onclick="switchTool('texttools')">
+            <div class="icon">📝</div>
+            <div class="name">文本工具</div>
+            <div class="desc">字数统计/大小写转换/去重</div>
+        </div>
+        <div class="tool-card" data-tool="base64" onclick="switchTool('base64')">
+            <div class="icon">🔐</div>
+            <div class="name">Base64 编解码</div>
+            <div class="desc">文本/图片 Base64 互转</div>
+        </div>
+        <div class="tool-card" data-tool="jsonfmt" onclick="switchTool('jsonfmt')">
+            <div class="icon">📋</div>
+            <div class="name">JSON 格式化</div>
+            <div class="desc">格式化/压缩/校验 JSON</div>
+        </div>
+        <div class="tool-card" data-tool="timestamp" onclick="switchTool('timestamp')">
+            <div class="icon">⏰</div>
+            <div class="name">时间戳转换</div>
+            <div class="desc">时间戳与日期互转</div>
+        </div>
+        <div class="tool-card" data-tool="hash" onclick="switchTool('hash')">
+            <div class="icon">🔑</div>
+            <div class="name">Hash 生成</div>
+            <div class="desc">MD5/SHA1/SHA256 计算</div>
+        </div>
+    </div>
+
+    <!-- 图片压缩 -->
+    <div class="tool-panel show" id="panel-imgcompress">
+        <h2>图片压缩</h2>
+        <p class="tip">上传图片，拖动滑块调整质量，下载压缩后的图片。所有操作在浏览器内完成，不会上传到任何服务器。</p>
+        <div class="drop-zone" id="compressDrop" onclick="document.getElementById('compressInput').click()">
+            <div class="big-icon">📁</div>
+            <p>点击上传或拖拽图片到此处</p>
+        </div>
+        <input type="file" id="compressInput" accept="image/*" onchange="handleCompressFile(this)" />
+        <div class="file-list" id="compressPreview"></div>
+        <div style="margin-top:12px; display:none;" id="compressControls">
+            <label style="font-size:0.85rem;font-weight:600;">质量：<span id="qualityLabel">80</span>%</label>
+            <input type="range" id="qualitySlider" min="1" max="100" value="80" oninput="updateCompressPreview()" style="width:100%;margin-top:4px;" />
+            <div class="progress-bar" id="compressProgress"><div class="fill" id="compressProgressFill"></div></div>
+            <div class="result-box" id="compressResult">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                    <span>压缩后：<strong id="compressNewSize">0 KB</strong>（节省 <span id="compressSaved">0%</span>）</span>
+                    <button class="btn btn-success" onclick="downloadCompressed()">下载压缩图片</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 文本工具 -->
+    <div class="tool-panel" id="panel-texttools">
+        <h2>文本工具</h2>
+        <p class="tip">输入或粘贴文本，选择要执行的操作。</p>
+        <textarea id="textInput" rows="6" placeholder="在此输入你的文本..." style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:10px;font-size:0.9rem;resize:vertical;"></textarea>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-secondary" onclick="textCount()">📊 字数统计</button>
+            <button class="btn btn-secondary" onclick="textUpper()">⬆ 转大写</button>
+            <button class="btn btn-secondary" onclick="textLower()">⬇ 转小写</button>
+            <button class="btn btn-secondary" onclick="textTrim()">✂️ 去除多余空格</button>
+            <button class="btn btn-secondary" onclick="textDedup()">🔄 去重行</button>
+            <button class="btn btn-secondary" onclick="textClear()">🗑️ 清空</button>
+        </div>
+        <div class="result-box" id="textResult"></div>
+    </div>
+
+    <!-- Base64 -->
+    <div class="tool-panel" id="panel-base64">
+        <h2>Base64 编解码</h2>
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+            <button class="btn btn-secondary" onclick="setBase64Mode('encode')" id="b64-encode-btn">编码</button>
+            <button class="btn btn-secondary" onclick="setBase64Mode('decode')" id="b64-decode-btn">解码</button>
+        </div>
+        <textarea id="b64Input" rows="4" placeholder="输入要编码/解码的文本..." style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:10px;font-size:0.9rem;resize:vertical;"></textarea>
+        <div class="btn-group" style="margin-top:10px;">
+            <button class="btn btn-primary" onclick="execBase64()">执行</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('b64Input').value='';document.getElementById('b64Output').textContent=''">清空</button>
+        </div>
+        <div class="result-box" id="b64Output" style="white-space:pre-wrap;word-break:break-all;"></div>
+    </div>
+
+    <!-- JSON -->
+    <div class="tool-panel" id="panel-jsonfmt">
+        <h2>JSON 格式化</h2>
+        <textarea id="jsonInput" rows="6" placeholder="粘贴 JSON 字符串..." style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:10px;font-size:0.85rem;font-family:monospace;resize:vertical;"></textarea>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="jsonFormat()">格式化</button>
+            <button class="btn btn-secondary" onclick="jsonCompress()">压缩</button>
+            <button class="btn btn-secondary" onclick="jsonValidate()">校验</button>
+            <button class="btn btn-secondary" onclick="jsonClear()">清空</button>
+        </div>
+        <div class="result-box" id="jsonOutput"></div>
+    </div>
+
+    <!-- 时间戳 -->
+    <div class="tool-panel" id="panel-timestamp">
+        <h2>时间戳转换</h2>
+        <div style="margin-bottom:16px;">
+            <label style="font-weight:600;font-size:0.9rem;">时间戳 → 日期</label>
+            <div style="display:flex;gap:8px;margin-top:4px;">
+                <input type="text" id="tsInput" placeholder="输入时间戳（秒或毫秒）" style="flex:1;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.9rem;" />
+                <button class="btn btn-primary" onclick="tsToDate()">转换</button>
+            </div>
+            <div id="tsResult" class="result-box"></div>
+        </div>
+        <div>
+            <label style="font-weight:600;font-size:0.9rem;">日期 → 时间戳</label>
+            <div style="display:flex;gap:8px;margin-top:4px;">
+                <input type="datetime-local" id="dateInput" style="flex:1;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.9rem;" />
+                <button class="btn btn-primary" onclick="dateToTs()">转换</button>
+            </div>
+            <div id="tsResult2" class="result-box"></div>
+        </div>
+    </div>
+
+    <!-- Hash -->
+    <div class="tool-panel" id="panel-hash">
+        <h2>Hash 生成</h2>
+        <textarea id="hashInput" rows="4" placeholder="输入要计算 Hash 的文本..." style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:10px;font-size:0.9rem;resize:vertical;"></textarea>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="calcHash()">计算 Hash</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('hashInput').value='';document.querySelectorAll('#hashResult .hash-line').forEach(el=>el.remove())">清空</button>
+        </div>
+        <div class="result-box" id="hashResult"></div>
+    </div>
+
+    <div class="support">
+        <h3>支持作者</h3>
+        <p>如果这些工具帮到了你，欢迎请作者喝杯咖啡</p>
+        <div class="qr-label" id="supportNotice">⏳ 微信收款码待配置</div>
+    </div>
+</main>
+
+<footer>
+    <div class="container">
+        <p>免费在线工具箱 &copy; 2026 — 所有处理在浏览器本地完成，不上传任何文件到服务器</p>
+        <p style="margin-top:4px;"><a href="https://github.com/VowToMe/free-file-tools" target="_blank" rel="noopener">GitHub 源码</a></p>
+    </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ 切换工具 ============
+function switchTool(name) {
+    document.querySelectorAll('.tool-panel').forEach(el => el.classList.remove('show'));
+    document.querySelectorAll('.tool-card').forEach(el => el.classList.remove('active'));
+    document.getElementById('panel-' + name)?.classList.add('show');
+    document.querySelector('.tool-card[data-tool="' + name + '"]')?.classList.add('active');
+}
+
+// ============ Toast ============
+function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ============ 图片压缩 ============
+let compressFile = null;
+let compressedBlob = null;
+
+document.getElementById('compressDrop').addEventListener('dragover', e => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); });
+document.getElementById('compressDrop').addEventListener('dragleave', e => { e.currentTarget.classList.remove('drag-over'); });
+document.getElementById('compressDrop').addEventListener('drop', e => {
+    e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+    if (e.dataTransfer.files.length) processCompressFile(e.dataTransfer.files[0]);
+});
+
+function handleCompressFile(input) {
+    if (input.files.length) processCompressFile(input.files[0]);
+}
+
+function processCompressFile(file) {
+    if (!file.type.startsWith('image/')) { toast('请上传图片文件'); return; }
+    compressFile = file;
+    document.getElementById('compressPreview').innerHTML = 
+        '<div class="file-item"><span class="name">📄 ' + file.name + '</span><span class="size">' + (file.size/1024).toFixed(1) + ' KB</span></div>';
+    document.getElementById('compressControls').style.display = 'block';
+    document.getElementById('compressResult').classList.remove('show');
+    updateCompressPreview();
+}
+
+function updateCompressPreview() {
+    if (!compressFile) return;
+    const quality = parseInt(document.getElementById('qualitySlider').value) / 100;
+    document.getElementById('qualityLabel').textContent = parseInt(document.getElementById('qualitySlider').value);
+    const progress = document.getElementById('compressProgress');
+    const fill = document.getElementById('compressProgressFill');
+    progress.classList.add('show');
+    fill.style.width = '60%';
+    
+    setTimeout(() => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width; canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                const mime = compressFile.type === 'image/png' ? 'image/png' : 'image/jpeg';
+                canvas.toBlob(function(blob) {
+                    compressedBlob = blob;
+                    fill.style.width = '100%';
+                    setTimeout(() => { progress.classList.remove('show'); fill.style.width = '0%'; }, 300);
+                    const origSize = compressFile.size;
+                    const newSize = blob.size;
+                    const saved = ((1 - newSize/origSize) * 100).toFixed(1);
+                    document.getElementById('compressNewSize').textContent = (newSize/1024).toFixed(1) + ' KB';
+                    document.getElementById('compressSaved').textContent = saved + '%';
+                    document.getElementById('compressResult').classList.add('show');
+                }, mime, quality);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(compressFile);
+    }, 200);
+}
+
+function downloadCompressed() {
+    if (!compressedBlob || !compressFile) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(compressedBlob);
+    const name = compressFile.name.replace(/\.[^.]+$/, '') + '_compressed.' + (compressedBlob.type.includes('png') ? 'png' : 'jpg');
+    a.download = name; a.click();
+    toast('下载完成！');
+}
+
+// ============ 文本工具 ============
+function textCount() {
+    const t = document.getElementById('textInput').value;
+    const chars = t.length;
+    const charsNoSpace = t.replace(/\s/g, '').length;
+    const words = t.trim() ? t.trim().split(/\s+/).length : 0;
+    const lines = t ? t.split('\n').length : 0;
+    showTextResult('📊 字数统计：' + chars + ' 字符（不含空格：' + charsNoSpace + '）| ' + words + ' 词 | ' + lines + ' 行');
+}
+
+function textUpper() {
+    document.getElementById('textInput').value = document.getElementById('textInput').value.toUpperCase();
+    showTextResult('已转换为大写');
+}
+
+function textLower() {
+    document.getElementById('textInput').value = document.getElementById('textInput').value.toLowerCase();
+    showTextResult('已转换为小写');
+}
+
+function textTrim() {
+    document.getElementById('textInput').value = document.getElementById('textInput').value.split('\n').map(l => l.trim()).join('\n');
+    showTextResult('已去除多余空格');
+}
+
+function textDedup() {
+    const lines = document.getElementById('textInput').value.split('\n');
+    document.getElementById('textInput').value = [...new Set(lines)].join('\n');
+    showTextResult('已去重，共 ' + (lines.length - new Set(lines).size) + ' 行重复');
+}
+
+function textClear() {
+    document.getElementById('textInput').value = '';
+    document.getElementById('textResult').classList.remove('show');
+}
+
+function showTextResult(msg) {
+    const r = document.getElementById('textResult');
+    r.textContent = msg; r.classList.add('show');
+}
+
+// ============ Base64 ============
+let b64Mode = 'encode';
+function setBase64Mode(mode) {
+    b64Mode = mode;
+    document.getElementById('b64-encode-btn').className = 'btn ' + (mode === 'encode' ? 'btn-primary' : 'btn-secondary');
+    document.getElementById('b64-decode-btn').className = 'btn ' + (mode === 'decode' ? 'btn-primary' : 'btn-secondary');
+}
+
+function execBase64() {
+    const input = document.getElementById('b64Input').value;
+    const out = document.getElementById('b64Output');
+    try {
+        if (b64Mode === 'encode') {
+            out.textContent = btoa(unescape(encodeURIComponent(input)));
+        } else {
+            out.textContent = decodeURIComponent(escape(atob(input)));
+        }
+        out.classList.add('show');
+    } catch(e) {
+        out.textContent = '❌ 错误：' + e.message;
+        out.classList.add('show');
+    }
+}
+
+// ============ JSON ============
+function jsonFormat() {
+    const input = document.getElementById('jsonInput').value;
+    const out = document.getElementById('jsonOutput');
+    try {
+        out.textContent = JSON.stringify(JSON.parse(input), null, 4);
+        out.classList.add('show');
+    } catch(e) {
+        out.textContent = '❌ JSON 格式错误：' + e.message;
+        out.classList.add('show');
+    }
+}
+
+function jsonCompress() {
+    const input = document.getElementById('jsonInput').value;
+    const out = document.getElementById('jsonOutput');
+    try {
+        out.textContent = JSON.stringify(JSON.parse(input));
+        out.classList.add('show');
+    } catch(e) {
+        out.textContent = '❌ JSON 格式错误：' + e.message;
+        out.classList.add('show');
+    }
+}
+
+function jsonValidate() {
+    const input = document.getElementById('jsonInput').value;
+    const out = document.getElementById('jsonOutput');
+    try {
+        JSON.parse(input);
+        out.textContent = '✅ JSON 格式正确';
+        out.classList.add('show');
+    } catch(e) {
+        out.textContent = '❌ JSON 格式错误：' + e.message;
+        out.classList.add('show');
+    }
+}
+
+function jsonClear() {
+    document.getElementById('jsonInput').value = '';
+    document.getElementById('jsonOutput').classList.remove('show');
+}
+
+// ============ 时间戳 ============
+function tsToDate() {
+    const input = document.getElementById('tsInput').value.trim();
+    const out = document.getElementById('tsResult');
+    let ts = parseInt(input);
+    if (isNaN(ts)) { out.textContent = '❌ 请输入有效数字'; out.classList.add('show'); return; }
+    if (ts > 1e12) ts = Math.floor(ts / 1000);
+    const d = new Date(ts * 1000);
+    out.textContent = '📅 ' + d.toLocaleString('zh-CN', {timeZone:'Asia/Shanghai'});
+    out.classList.add('show');
+}
+
+function dateToTs() {
+    const val = document.getElementById('dateInput').value;
+    const out = document.getElementById('tsResult2');
+    if (!val) { out.textContent = '❌ 请选择日期时间'; out.classList.add('show'); return; }
+    const d = new Date(val + ':00');
+    out.textContent = '⏱ 秒：' + Math.floor(d.getTime()/1000) + ' | 毫秒：' + d.getTime();
+    out.classList.add('show');
+}
+
+// ============ Hash ============
+async function calcHash() {
+    const input = document.getElementById('hashInput').value;
+    const out = document.getElementById('hashResult');
+    if (!input) { toast('请输入文本'); return; }
+    const encoder = new TextEncoder();
+    const data = encoder.encode(input);
+    const md5Hash = await md5(input);
+    const sha1Hash = await sha1(data);
+    const sha256Hash = await sha256(data);
+    out.innerHTML = '';
+    out.classList.add('show');
+    addHashLine(out, 'MD5', md5Hash);
+    addHashLine(out, 'SHA-1', sha1Hash);
+    addHashLine(out, 'SHA-256', sha256Hash);
+}
+
+function addHashLine(container, name, hash) {
+    const div = document.createElement('div');
+    div.className = 'hash-line';
+    div.style.cssText = 'padding:4px 0;font-size:0.85rem;';
+    div.innerHTML = '<span style="font-weight:600;color:#0f766e;">' + name + ':</span> <code style="word-break:break-all;font-family:monospace;">' + hash + '</code>';
+    container.appendChild(div);
+}
+
+// MD5 (simple implementation)
+async function md5(str) {
+    const buffer = new TextEncoder().encode(str);
+    const hashBuffer = await crypto.subtle.digest('MD5', buffer);
+    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function sha1(data) {
+    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function sha256(data) {
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ============ 初始化 ============
+// Set default datetime
+document.addEventListener('DOMContentLoaded', () => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset();
+    const local = new Date(now.getTime() - offset * 60000);
+    document.getElementById('dateInput').value = local.toISOString().slice(0, 16);
+});
+</script>
+</body>
+</html>
